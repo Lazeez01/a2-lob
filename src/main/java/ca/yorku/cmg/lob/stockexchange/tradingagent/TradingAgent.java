@@ -7,15 +7,16 @@ import ca.yorku.cmg.lob.trader.Trader;
 
 /**
  * A trading agent that receives news and reacts by delegating to an {@linkplain ITradingStrategy}.
+ * News can arrive by polling ({@link #timeAdvancedTo(long)}) or pushed by the {@linkplain NewsBoard} ({@link #update(Event)}).
  */
-public abstract class TradingAgent {
+public abstract class TradingAgent implements INewsObserver {
 	protected Trader t;
 	protected StockExchange exc;
 	protected NewsBoard news;
 	protected ITradingStrategy strategy;
 
 	/**
-	 * Constructor
+	 * Constructor. Registers the agent with the {@linkplain NewsBoard} to receive news.
 	 * @param t The {@linkplain Trader} object associated with the agent.
 	 * @param e The {@linkplain StockExchange} object at which the agent has an account and trades in.
 	 * @param n The {@linkplain NewsBoard} object that generates news events.
@@ -26,6 +27,7 @@ public abstract class TradingAgent {
 		this.exc = e;
 		this.news = n;
 		this.strategy = s;
+		this.news.registerObserver(this);
 	}
 
 	/**
@@ -37,8 +39,16 @@ public abstract class TradingAgent {
 	}
 
 	/**
+	 * Called by the {@linkplain NewsBoard} when it pushes a news event.
+	 * @param e The event being announced.
+	 */
+	@Override
+	public void update(Event e) {
+		examineEvent(e);
+	}
+
+	/**
 	 * Examine if an event is relevant for the Agent, i.e., if the Agent has a position on it.
-	 * If so, the agent's strategy decides how to react.
 	 * @param e The {@linkplain Event} object in question
 	 */
 	private void examineEvent(Event e) {

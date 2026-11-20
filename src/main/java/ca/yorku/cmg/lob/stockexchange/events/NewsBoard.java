@@ -3,23 +3,29 @@ package ca.yorku.cmg.lob.stockexchange.events;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 
 import ca.yorku.cmg.lob.security.Security;
 import ca.yorku.cmg.lob.security.SecurityList;
+import ca.yorku.cmg.lob.stockexchange.tradingagent.INewsObserver;
 
 /**
  * A NewsBoard object generates and shares financial/economic events that affect specific securities 
  */
-public class NewsBoard {
+public class NewsBoard implements INewsSubject {
 
 	//Events are queued ordered by time
 	PriorityQueue<Event> eventQueue = new PriorityQueue<>((e1, e2) -> Long.compare(e1.getTime(), e2.getTime()));
 
 	SecurityList securities;
+
+	//Observers registered to receive pushed events
+	private List<INewsObserver> observers = new ArrayList<>();
 	
 	public NewsBoard(SecurityList x) {
 		this.securities = x;
@@ -113,10 +119,30 @@ public class NewsBoard {
 	
 	
 	/**
-	 * Stub for the observer part. Runs the entire queue of events and sends notifications to registered trading agents.   
+	 * Runs the entire queue of events, in time order, and sends each one to the registered observers (trading agents).
 	 */
 	public void runEventsList() {
+		while (!eventQueue.isEmpty()) {
+			Event e = eventQueue.poll();
+			notifyObservers(e);
+		}
+	}
 
+	@Override
+	public void registerObserver(INewsObserver o) {
+		observers.add(o);
+	}
+
+	@Override
+	public void removeObserver(INewsObserver o) {
+		observers.remove(o);
+	}
+
+	@Override
+	public void notifyObservers(Event e) {
+		for (INewsObserver o : observers) {
+			o.update(e);
+		}
 	}
 	
 	
